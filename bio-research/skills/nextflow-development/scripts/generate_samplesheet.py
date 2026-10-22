@@ -16,6 +16,7 @@ Usage:
 """
 
 import argparse
+import csv
 import os
 import sys
 from pathlib import Path
@@ -327,11 +328,13 @@ def _write_samplesheet(rows: List[Dict], config: Dict, output_path: str):
     # Maintain original column order
     active_columns = [c for c in column_names if c in active_columns]
 
-    with open(output_path, 'w') as f:
-        f.write(','.join(active_columns) + '\n')
+    # Use csv.writer so values containing commas (e.g. FASTQ paths inside a
+    # directory like "reads,run") are quoted instead of corrupting the row.
+    with open(output_path, 'w', newline='') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        writer.writerow(active_columns)
         for row in rows:
-            values = [str(row.get(col, '')) for col in active_columns]
-            f.write(','.join(values) + '\n')
+            writer.writerow([str(row.get(col, '')) for col in active_columns])
 
 
 def _print_preview(rows: List[Dict], config: Dict):
